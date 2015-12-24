@@ -319,7 +319,7 @@
 		this.element = null;
 		this.pageMargin = 0;
 		this.currentPage = 0;
-		
+		this.renderAllPages = true;
 		this.api = new PDFViewerAPI(this);
 
 		// Hooks for the client...
@@ -547,12 +547,12 @@
 			var self = this;
 			var numPages = this.pages.length;
 			var currentPageID = 0;
-
+			
 			var atLeastOnePageInViewport = false;
 			for(var iPage = 0;iPage < numPages;++iPage) {
 				var page = this.pages[iPage];
 
-				if(page.isVisible()) {
+				if(page.isVisible() || this.renderAllPages) {
 					var parentContainer = page.container.parent()[0];
 					var pageTop = page.container[0].offsetTop - parentContainer.scrollTop;
 					if(pageTop <= parentContainer.offsetHeight / 2) {
