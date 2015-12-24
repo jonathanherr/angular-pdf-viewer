@@ -319,7 +319,7 @@
 		this.element = null;
 		this.pageMargin = 0;
 		this.currentPage = 0;
-		this.renderAllPages = true;
+		this.renderAllPages = true; //do not hide pages that are not visible
 		this.api = new PDFViewerAPI(this);
 
 		// Hooks for the client...
