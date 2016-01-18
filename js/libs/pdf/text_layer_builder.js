@@ -80,6 +80,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
 
       var lastFontSize;
       var lastFontFamily;
+      var lastDiv=null;
       for (var i = 0; i < textDivsLength; i++) {
         var textDiv = textDivs[i];
         if (textDiv.dataset.isWhitespace !== undefined) {
@@ -97,7 +98,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         }
 
         var width = ctx.measureText(textDiv.textContent).width;
-        if (width > 0) {
+        if (width > 0 && (lastDiv==null || textDiv.style.top!=lastDiv.style.top)) {
           textLayerFrag.appendChild(textDiv);
           var transform;
           if (textDiv.dataset.canvasWidth !== undefined) {
@@ -114,7 +115,20 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
           if (transform) {
             CustomStyle.setProp('transform' , textDiv, transform);
           }
+          lastDiv=textDiv;
         }
+        else if(lastDiv!=null && textDiv.style.top==lastDiv.style.top){
+          if(lastDiv.textContent.endsWith(" ") || textDiv.textContent.startsWith(" "))
+            lastDiv.textContent+=textDiv.textContent
+          else{
+            lastDiv.textContent+=" "+textDiv.textContent; //todo: check if word is formed by combining without space - gen word list from corpus, with pdist
+          }
+          var width = ctx.measureText(lastDiv.textContent).width;
+          var textScale = textDiv.dataset.canvasWidth / width;
+          //transform = 'scaleX(' + textScale + ')';
+          //CustomStyle.setProp('transform' , lastDiv, transform);
+        }
+
       }
 
       this.textLayerDiv.appendChild(textLayerFrag);
