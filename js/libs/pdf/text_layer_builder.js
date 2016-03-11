@@ -110,7 +110,14 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
 
         var width = ctx.measureText(textDiv.textContent).width;
         if (width > 0 && (lastDiv==null || textDiv.style.top!=lastDiv.style.top)) {
+          if(lastDiv!=null)
+          if(textDiv.style.top!=lastDiv.style.top){
+            if(!textDiv.textContent.startsWith(" ") && !lastDiv.textContent.endsWith(" ")){
+              lastDiv.textContent+=" ";
+            }
+          }
           textLayerFrag.appendChild(textDiv);
+
           var transform;
           if (textDiv.dataset.canvasWidth !== undefined) {
             // Dataset values come of type string.
@@ -145,7 +152,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
                 lastDiv.textContent+=textDiv.textContent;
               }
               else{
-                lastDiv.textContent+=" "+textDiv.textContent; //todo: check if word is formed by combining without space - gen word list from corpus, with pdist
+                lastDiv.textContent+=" "+textDiv.textContent;
               }
           }
           var width = ctx.measureText(lastDiv.textContent).width;
