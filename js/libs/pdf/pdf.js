@@ -2898,6 +2898,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
             } else {
               font = new FontFaceObject(exportedData);
             }
+            
 
             FontLoader.bind(
               [font],
@@ -8291,5 +8292,3 @@ if (!PDFJS.workerSrc && typeof document !== 'undefined') {
     return pdfJsSrc && pdfJsSrc.replace(/\.js$/i, '.worker.js');
   })();
 }
-
-

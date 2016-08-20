@@ -5611,7 +5611,7 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
         if (!isValidUrl(url, false)) {
           url = '';
         }
-        // According to ISO 32000-1:2008, section 12.6.4.7, 
+        // According to ISO 32000-1:2008, section 12.6.4.7,
         // URI should to be encoded in 7-bit ASCII.
         // Some bad PDFs may have URIs in UTF-8 encoding, see Bugzilla 1122280.
         try {
@@ -11138,8 +11138,25 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       });
     },
 
-    handleText: function PartialEvaluator_handleText(chars, state) {
+    handleText: function PartialEvaluator_handleText(chars, state,search) {
+      var self = this;
       var font = state.font;
+      if(search!=undefined){
+        var s_loc=chars.indexOf(search);
+        if(s_loc>=0){
+          var searchFont=state.font;
+          searchFont.italic=true;
+          var searchState = state;
+          searchState.font=searchFont;
+          var before=chars.substring(0,s_loc)
+          if(before.length>0)
+            self.handleText(before,state);
+          var after=chars.substring(s_loc+search.length,chars.length);
+          if(after.length>0)
+            self.handleText(after,state);
+          self.handleText(search,searchState);
+        }
+      }
       var glyphs = font.charsToGlyphs(chars);
       var isAddToPathSet = !!(state.textRenderingMode &
                               TextRenderingMode.ADD_TO_PATH_FLAG);
@@ -11536,7 +11553,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               args = null;
               continue;
             case OPS.showText:
-              args[0] = self.handleText(args[0], stateManager.state);
+              args[0] = self.handleText(args[0], stateManager.state,'A4');
               break;
             case OPS.showSpacedText:
               var arr = args[0];
@@ -11547,7 +11564,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 var arrItem = arr[i];
                 if (isString(arrItem)) {
                   Array.prototype.push.apply(combinedGlyphs,
-                    self.handleText(arrItem, state));
+                    self.handleText(arrItem, state, "PORTRAIT"));
                 } else if (isNum(arrItem)) {
                   combinedGlyphs.push(arrItem);
                 }
@@ -39955,5 +39972,3 @@ if (!PDFJS.workerSrc && typeof document !== 'undefined') {
     return pdfJsSrc && pdfJsSrc.replace(/\.js$/i, '.worker.js');
   })();
 }
-
-
