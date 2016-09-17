@@ -214,6 +214,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
     appendText: function TextLayerBuilder_appendText(geom, styles) {
       var style = styles[geom.fontName];
       var textDiv = document.createElement('div');
+      textDiv.className="pdfsent";
       this.textDivs.push(textDiv);
       if (isAllWhitespace(geom.str)) {
         textDiv.dataset.isWhitespace = true;
@@ -358,6 +359,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
 
       function appendTextToDiv(divIdx, fromOffset, toOffset, className) {
         var div = textDivs[divIdx];
+	div.className="pdfsent";
         var content = bidiTexts[divIdx].str.substring(fromOffset, toOffset);
         var node = document.createTextNode(content);
         if (className) {
