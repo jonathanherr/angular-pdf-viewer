@@ -136,7 +136,7 @@
 		5.0
 	];
 
-	function PDFPage(pdfPage, textContent) {
+	function PDFPage(pdfPage, textContent, textLayerClass) {
 		this.id = pdfPage.pageIndex + 1;
 		this.container = angular.element("<div class='page'></div>");
 		this.container.attr("id", "page_" + pdfPage.pageIndex);
@@ -148,6 +148,7 @@
 		this.textContent = textContent;
 		this.rendered = false;
 		this.renderTask = null;
+		this.textLayerClass = textLayerClass;
 	}
 	
 	PDFPage.prototype = {
@@ -262,7 +263,8 @@
 					var textLayerBuilder = new TextLayerBuilder({
 						textLayerDiv: self.textLayer[0],
 						pageIndex: self.id,
-						viewport: viewport
+						viewport: viewport,
+						textLayerClass: self.textLayerClass
 					});
 
 					textLayerBuilder.setTextContent(self.textContent);
@@ -331,7 +333,7 @@
 	}
 
 	PDFViewer.prototype = {
-		setUrl: function (url, element, initialScale, renderTextLayer, pageMargin) {
+		setUrl: function (url, element, initialScale, renderTextLayer, textLayerClass, pageMargin) {
 			this.resetSearch();
 			this.pages = [];
 			this.pdfLinkService = null;
@@ -339,6 +341,7 @@
 			this.hasTextLayer = renderTextLayer;
 			this.element = element;
 			this.pageMargin = pageMargin;
+			this.textLayerClass = textLayerClass;
 			
 			var self = this;
 			var getDocumentTask = PDFJS.getDocument(url, null, angular.bind(this, this.passwordCallback), angular.bind(this, this.downloadProgress));
@@ -346,7 +349,7 @@
 				self.pdf = pdf;
 
 				// Get all the pages...
-				self.getAllPages(pdf, renderTextLayer, function (pageList, pagesRefMap) {
+				self.getAllPages(pdf, renderTextLayer, textLayerClass, function (pageList, pagesRefMap) {
 					self.pages = pageList;
 					self.pagesRefMap = pagesRefMap;
 					self.pdfLinkService = new PDFLinkService(pagesRefMap, self.api);
@@ -436,7 +439,7 @@
 		getAPI: function () {
 			return this.api;
 		},
-		getAllPages: function (pdf, hasTextLayer, callback) {
+		getAllPages: function (pdf, hasTextLayer, textLayerClass, callback) {
 			var pageList = [],
 			    pagesRefMap = {},
 				numPages = pdf.numPages,
@@ -454,7 +457,7 @@
 
 						var textContentTask = page.getTextContent();
 						textContentTask.then(function (textContent) {
-							pageList[page.pageIndex] = new PDFPage(page, textContent);
+							pageList[page.pageIndex] = new PDFPage(page, textContent, textLayerClass);
 
 							--remainingPages;
 							if(remainingPages === 0) {
@@ -890,6 +893,7 @@
 				src: "@",
 				file: "=",
 				api: "=",
+				textLayerClass: "@",
 				initialScale: "@",
 				renderTextLayer: "@",
 				progressCallback: "&",
@@ -979,7 +983,7 @@
 				$scope.onPDFSrcChanged = function () {
 					$element.empty();
 					this.lastScrollY = 0;
-					this.viewer.setUrl(this.src, $element, this.initialScale, this.shouldRenderTextLayer(), pageMargin);
+					this.viewer.setUrl(this.src, $element, this.initialScale, this.shouldRenderTextLayer(), this.textLayerClass, pageMargin);
 				};
 
 				$scope.onPDFFileChanged = function () {

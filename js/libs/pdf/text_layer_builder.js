@@ -74,6 +74,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
     this.pageNumber = this.pageIdx + 1;
     this.matches = [];
     this.viewport = options.viewport;
+    this.textLayerClass = options.textLayerClass;
     this.textDivs = [];
     this.findController = options.findController || null;
   }
@@ -214,7 +215,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
     appendText: function TextLayerBuilder_appendText(geom, styles) {
       var style = styles[geom.fontName];
       var textDiv = document.createElement('div');
-      textDiv.className="pdfsent";
+      textDiv.className=this.textLayerClass;
       this.textDivs.push(textDiv);
       if (isAllWhitespace(geom.str)) {
         textDiv.dataset.isWhitespace = true;
