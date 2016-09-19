@@ -360,7 +360,6 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
 
       function appendTextToDiv(divIdx, fromOffset, toOffset, className) {
         var div = textDivs[divIdx];
-	div.className="pdfsent";
         var content = bidiTexts[divIdx].str.substring(fromOffset, toOffset);
         var node = document.createTextNode(content);
         if (className) {
