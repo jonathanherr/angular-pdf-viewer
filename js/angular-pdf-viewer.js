@@ -590,7 +590,7 @@
 				}
 			}
 
-			this.removeDistantPages(currentPageID, 50);
+			this.removeDistantPages(currentPageID, 125);
 
 			this.currentPage = currentPageID + 1;
 			this.onCurrentPageChanged(currentPageID + 1);
