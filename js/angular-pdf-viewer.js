@@ -136,19 +136,19 @@
 		5.0
 	];
 
-	function PDFPage(pdfPage, textContent, textLayerClass) {
+	function PDFPage(pdfPage, textContent, textLayerClass, footerImagePath, isPrintPreview) {
 		this.id = pdfPage.pageIndex + 1;
 		this.container = angular.element("<div class='page'></div>");
 		this.container.attr("id", "page_" + pdfPage.pageIndex);
-
 		this.canvas = angular.element("<canvas></canvas>");
 		this.textLayer = angular.element("<div class='text-layer'></div>");
-		this.footer = angular.element("<div class='footer'><img src='"+this.footImagePath+"'></div>")
+		this.footer = angular.element("<div class='footerImageWrapper'><img class='footerImage' src='"+footerImagePath+"'></div>")
 		this.pdfPage = pdfPage;
 		this.textContent = textContent;
 		this.rendered = false;
 		this.renderTask = null;
 		this.textLayerClass = textLayerClass;
+		this.isPrintPreview = isPrintPreview;
 	}
 	
 	PDFPage.prototype = {
@@ -257,7 +257,7 @@
 				self.renderTask = null;
 
 				self.container.append(self.canvas);
-				if(this.pdfPage.pageIndex==0)
+				if(self.pdfPage.pageIndex==0 && self.isPrintPreview=="true")
 					self.container.append(self.footer);
 				if(self.textContent) {
 					// Render the text layer...
@@ -334,7 +334,7 @@
 	}
 
 	PDFViewer.prototype = {
-		setUrl: function (url, element, initialScale, renderTextLayer, textLayerClass, footerImage, pageMargin) {
+		setUrl: function (url, element, initialScale, renderTextLayer, textLayerClass, footerImage, isPrintPreview, pageMargin) {
 			this.resetSearch();
 			this.pages = [];
 			this.pdfLinkService = null;
@@ -343,14 +343,15 @@
 			this.element = element;
 			this.pageMargin = pageMargin;
 			this.textLayerClass = textLayerClass;
-			this.footImagePath = footerImage;
+			this.footerImagePath = footerImage;
+			this.isPrintPreview = isPrintPreview;
 			var self = this;
 			var getDocumentTask = PDFJS.getDocument(url, null, angular.bind(this, this.passwordCallback), angular.bind(this, this.downloadProgress));
 			getDocumentTask.then(function (pdf) {
 				self.pdf = pdf;
 
 				// Get all the pages...
-				self.getAllPages(pdf, renderTextLayer, textLayerClass, function (pageList, pagesRefMap) {
+				self.getAllPages(pdf, renderTextLayer, textLayerClass, footerImage, isPrintPreview, function (pageList, pagesRefMap) {
 					self.pages = pageList;
 					self.pagesRefMap = pagesRefMap;
 					self.pdfLinkService = new PDFLinkService(pagesRefMap, self.api);
@@ -440,7 +441,7 @@
 		getAPI: function () {
 			return this.api;
 		},
-		getAllPages: function (pdf, hasTextLayer, textLayerClass, callback) {
+		getAllPages: function (pdf, hasTextLayer, textLayerClass, footerImagePath, isPrintPreview, callback) {
 			var pageList = [],
 			    pagesRefMap = {},
 				numPages = pdf.numPages,
@@ -458,7 +459,7 @@
 
 						var textContentTask = page.getTextContent();
 						textContentTask.then(function (textContent) {
-							pageList[page.pageIndex] = new PDFPage(page, textContent, textLayerClass);
+							pageList[page.pageIndex] = new PDFPage(page, textContent, textLayerClass, footerImagePath, isPrintPreview);
 
 							--remainingPages;
 							if(remainingPages === 0) {
@@ -898,6 +899,7 @@
 				footerImage: "@",
 				initialScale: "@",
 				renderTextLayer: "@",
+				isPrintPreview: "@",
 				progressCallback: "&",
 				passwordCallback: "&",
 				searchTerm: "@",
@@ -985,7 +987,7 @@
 				$scope.onPDFSrcChanged = function () {
 					$element.empty();
 					this.lastScrollY = 0;
-					this.viewer.setUrl(this.src, $element, this.initialScale, this.shouldRenderTextLayer(), this.textLayerClass, this.footerImage, pageMargin);
+					this.viewer.setUrl(this.src, $element, this.initialScale, this.shouldRenderTextLayer(), this.textLayerClass, this.footerImage, this.isPrintPreview, pageMargin);
 				};
 
 				$scope.onPDFFileChanged = function () {
