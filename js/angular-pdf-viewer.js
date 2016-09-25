@@ -143,7 +143,7 @@
 
 		this.canvas = angular.element("<canvas></canvas>");
 		this.textLayer = angular.element("<div class='text-layer'></div>");
-
+		this.footer = angular.element("<div class='footer'><img src='"+this.footImagePath+"'></div>")
 		this.pdfPage = pdfPage;
 		this.textContent = textContent;
 		this.rendered = false;
@@ -257,7 +257,8 @@
 				self.renderTask = null;
 
 				self.container.append(self.canvas);
-
+				if(this.pdfPage.pageIndex==0)
+					self.container.append(self.footer);
 				if(self.textContent) {
 					// Render the text layer...
 					var textLayerBuilder = new TextLayerBuilder({
@@ -333,7 +334,7 @@
 	}
 
 	PDFViewer.prototype = {
-		setUrl: function (url, element, initialScale, renderTextLayer, textLayerClass, pageMargin) {
+		setUrl: function (url, element, initialScale, renderTextLayer, textLayerClass, footerImage, pageMargin) {
 			this.resetSearch();
 			this.pages = [];
 			this.pdfLinkService = null;
@@ -342,7 +343,7 @@
 			this.element = element;
 			this.pageMargin = pageMargin;
 			this.textLayerClass = textLayerClass;
-			
+			this.footImagePath = footerImage;
 			var self = this;
 			var getDocumentTask = PDFJS.getDocument(url, null, angular.bind(this, this.passwordCallback), angular.bind(this, this.downloadProgress));
 			getDocumentTask.then(function (pdf) {
@@ -894,6 +895,7 @@
 				file: "=",
 				api: "=",
 				textLayerClass: "@",
+				footerImage: "@",
 				initialScale: "@",
 				renderTextLayer: "@",
 				progressCallback: "&",
@@ -983,7 +985,7 @@
 				$scope.onPDFSrcChanged = function () {
 					$element.empty();
 					this.lastScrollY = 0;
-					this.viewer.setUrl(this.src, $element, this.initialScale, this.shouldRenderTextLayer(), this.textLayerClass, pageMargin);
+					this.viewer.setUrl(this.src, $element, this.initialScale, this.shouldRenderTextLayer(), this.textLayerClass, this.footerImage, pageMargin);
 				};
 
 				$scope.onPDFFileChanged = function () {
