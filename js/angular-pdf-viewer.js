@@ -261,17 +261,8 @@
 					self.container.append(self.footer);
 				if(self.textContent) {
 					// Render the text layer...
-					var textLayerBuilder = new TextLayerBuilder({
-						textLayerDiv: self.textLayer[0],
-						pageIndex: self.id,
-						viewport: viewport,
-						textLayerClass: self.textLayerClass
-					});
-
-					textLayerBuilder.setTextContent(self.textContent);
-					textLayerBuilder.renderLayer();
+				        PDFJS.renderTextLayer({"textContent":self.textContent,"container":self.container,"viewport":viewport,"textDivs":self.textLayer,"enhanceTextSelection":true,"textLayerClass":self.textLayerClass});
 					self.container.append(self.textLayer);
-
 					if(linkService) {
 						// Render the annotation layer...
 						// NOTE: Annotation div is inserted into the page div iff
