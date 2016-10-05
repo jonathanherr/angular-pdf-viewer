@@ -261,7 +261,7 @@
 					self.container.append(self.footer);
 				if(self.textContent) {
 					// Render the text layer...
-				        PDFJS.renderTextLayer({"textContent":self.textContent,"container":self.container,"viewport":viewport,"textDivs":self.textLayer,"enhanceTextSelection":true,"textLayerClass":self.textLayerClass});
+				        PDFJS.renderTextLayer({"textContent":self.textContent,"container":self.container[0],"viewport":viewport,"textDivs":null,"enhanceTextSelection":true,"textLayerClass":self.textLayerClass});
 					self.container.append(self.textLayer);
 					if(linkService) {
 						// Render the annotation layer...
