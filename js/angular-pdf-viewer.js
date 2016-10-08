@@ -189,7 +189,8 @@
 				return;
 			}
 			
-			var textDivs = textLayer.children();
+			//var textDivs = textLayer.children();
+			var textDivs = $(textLayer).find("div.pdfsent");
 			var item = textDivs[itemID];
 			
 			var before = item.childNodes[0].nodeValue.substr(0, matchPos);
@@ -458,6 +459,7 @@
 						pagesRefMap[refStr] = page.pageIndex + 1;
 
 						var textContentTask = page.getTextContent();
+						
 						textContentTask.then(function (textContent) {
 							pageList[page.pageIndex] = new PDFPage(page, textContent, textLayerClass, footerImagePath, isPrintPreview);
 
@@ -620,15 +622,18 @@
 			var numPages = this.pages.length;
 			for(var iPage = 0;iPage < numPages;++iPage) {
 				var pageTextContent = this.pages[iPage].textContent;
+				pageTextContent = $($(".text-layer")[iPage]).find("div.pdfsent");
+
 				if(pageTextContent === null) {
 					continue;
 				}
-
-				var numItems = pageTextContent.items.length;
+				var numItems = pageTextContent.length;
+				//var numItems = pageTextContent.items.length;
 				var numItemsSkipped = 0;
 				for(var iItem = 0;iItem < numItems;++iItem) {
 					// Find all occurrences of text in item string.
-					var itemStr = pageTextContent.items[iItem].str;
+					//var itemStr = pageTextContent.items[iItem].str;
+					var itemStr = pageTextContent[iItem].textContent;
 					itemStr = trim1(itemStr);
 					if(itemStr.length === 0) {
 						numItemsSkipped++;
@@ -724,6 +729,7 @@
 			}
 
 			var textDivs = textLayer.children();
+			textDivs = $(textLayer).find("div.pdfsent");
 			if(textDivs === null || textDivs.length === 0) {
 				return;
 			}
