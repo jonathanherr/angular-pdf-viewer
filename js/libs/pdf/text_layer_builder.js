@@ -131,6 +131,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
               lastDiv.textContent+=" ";
             }
           }
+	  textDiv.innerHTML=textDiv.innerHTML.replace(new RegExp("&nbsp;","g")," "); //remove &nbsp;'s from text
           textLayerFrag.appendChild(textDiv);
 
           var transform;
