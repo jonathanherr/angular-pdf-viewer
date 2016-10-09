@@ -199,7 +199,8 @@
 			
 			var highlight_span = document.createElement("span");
 			highlight_span.className = "highlight";
-			
+			highlight_span.style["fontFamily"]=item.style["fontFamily"];
+			highlight_span.style["fontSize"]=item.style["fontSize"];
 			highlight_span.appendChild(document.createTextNode(middle));
 			
 			item.childNodes[0].nodeValue = before;
