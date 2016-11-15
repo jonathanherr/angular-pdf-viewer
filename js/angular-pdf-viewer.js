@@ -142,7 +142,10 @@
 		this.container.attr("id", "page_" + pdfPage.pageIndex);
 		this.canvas = angular.element("<canvas></canvas>");
 		this.textLayer = angular.element("<div class='text-layer'></div>");
-		this.footer = angular.element("<div class='footerImageWrapper'><img class='footerImage' src='"+footerImagePath+"'></div>")
+		if(footerImagePath!="")
+			this.footer = angular.element("<div class='footerImageWrapper'><img class='footerImage' src='"+footerImagePath+"'></div>")
+		else
+			this.footer = null;
 		this.pdfPage = pdfPage;
 		this.textContent = textContent;
 		this.rendered = false;
@@ -259,7 +262,7 @@
 				self.renderTask = null;
 
 				self.container.append(self.canvas);
-				if(self.pdfPage.pageIndex==0 && self.isPrintPreview=="true")
+				if(self.pdfPage.pageIndex==0 && self.isPrintPreview=="true" && self.footer!=null)
 					self.container.append(self.footer);
 				if(self.textContent) {
 					// Render the text layer...
