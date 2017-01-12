@@ -1,6 +1,5 @@
 (function (angular, document) {
 	"use strict";
-
 	angular.module("DemoApp.Controllers", []).
 	controller("DemoController", ["$scope", "$sce", function ($scope, $sce) {
 		$scope.isLoading = false;
@@ -112,9 +111,10 @@
 			return prompt("The selected PDF is password protected. PDF.js reason: " + reason, "");
 		};
 		
-//		$scope.printPDF = function () {
-//			$scope.pdfViewerAPI.print();
-//		};
+		$scope.printPDF = function () {
+			$scope.printing=true;		
+			$scope.pdfViewerAPI.print();
+		};
 
 		$scope.trustSrc = function(src) {
 			return $sce.trustAsResourceUrl(src);
@@ -122,12 +122,13 @@
 
 		$scope.switchToPDF = function (pdfID) {
 			if(pdfID === 0) {
-				$scope.loadPDF("pdf/demo.pdf");
+				$scope.loadPDF("pdf/csa.pdf");
 			} else if(pdfID === 1) {
 				$scope.loadPDF("pdf/demo_large.pdf");
 			}
 		};
 
-		$scope.loadPDF("pdf/demo.pdf");
+		$scope.loadPDF("pdf/Turner.pdf");
+		window.setTimeout(function(){$scope.pdfViewerAPI.zoomTo(1.1);},5000);
 	}]);
 })(angular, document);

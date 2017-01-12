@@ -12,6 +12,11 @@
 			templateUrl: "partials/demo.html",
 			controller: "DemoController"
 		});	
+		$routeProvider.when("/preview", {
+			templateUrl: "partials/preview.html",
+			controller: "PreviewController"
+		});	
+		
 
 		$routeProvider.otherwise({
 			redirectTo: "/demo"

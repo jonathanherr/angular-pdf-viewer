@@ -81,7 +81,7 @@
 	</div>
 </div>
 
-<div id="toolbar">
+<div id="toolbar" ng-if="!preview">
 	<div class="zoom_wrapper">
 		<button data-ng-click="zoomOut()">-</button>
 		<select 
@@ -110,15 +110,9 @@
 		<button data-ng-click="findPrev()">&lt;</button>
 		<button data-ng-click="findNext()">&gt;</button>
 	</div>
-<!--
+-
 	<div class="print_wrapper">
 		<button data-ng-click="printPDF()">Print PDF</button>
-	</div>
--->
-	<div class="demos_wrapper">
-		<span>Demo:</span>
-		<button data-ng-click="switchToPDF(0)">Small (13kB)</button>
-		<button data-ng-click="switchToPDF(1)">Large (1MB)</button>
 	</div>
 </div>
 

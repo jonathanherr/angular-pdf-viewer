@@ -892,6 +892,9 @@
 			}
 
 			this.viewer.highlightSearchResult(prevHighlightID);
+		},
+		print: function(){
+			window.print();
 		}	
 	};
 
