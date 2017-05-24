@@ -7,11 +7,11 @@
 
 	/**
 	 * Returns the inner size of the element taking into account the vertical scrollbar that will
-	 * appear if the element gets really tall. 
-	 * 
+	 * appear if the element gets really tall.
+	 *
 	 * @argument {element} element The element we are calculating its inner size
 	 * @argument {integer} margin Margin around the element (subtracted from the element's size)
-	 */ 
+	 */
 	function getElementInnerSize(element, margin) {
 		var tallTempElement = angular.element("<div></div>");
 		tallTempElement.css("height", "10000px");
@@ -42,9 +42,9 @@
 
 	/*
 	 * PDF.js link service implementation for the annotation layer.
-	 * 
+	 *
 	 * See IPDFLinkService in PDF.js web/interfaces.js for details.
-	 * 
+	 *
 	 * Only the functions used by the annotation layer builder are implemented.
 	 * NOTE: This implementation is still unfinished (some cases aren't handled
 	 * and produce a warning in the console).
@@ -128,15 +128,15 @@
 
 	// A LUT for zoom levels (because I cannot find a formula that works in all cases).
 	var PDF_ZOOM_LEVELS_LUT= [
-		0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 
-		1.0, 1.1, 1.3, 1.5, 1.7, 1.9, 
-		2.0, 2.2, 2.4, 2.6, 2.8, 
+		0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,
+		1.0, 1.1, 1.3, 1.5, 1.7, 1.9,
+		2.0, 2.2, 2.4, 2.6, 2.8,
 		3.0, 3.3, 3.6, 3.9,
 		4.0, 4.5,
 		5.0
 	];
 
-	function PDFPage(pdfPage, textContent, textLayerClass, footerImagePath, isPrintPreview) {
+	function PDFPage(pdfPage, textContent, textLayerClass, getSentences, footerImagePath, isPrintPreview) {
 		this.id = pdfPage.pageIndex + 1;
 		this.container = angular.element("<div class='page'></div>");
 		this.container.attr("id", "page_" + pdfPage.pageIndex);
@@ -151,9 +151,10 @@
 		this.rendered = false;
 		this.renderTask = null;
 		this.textLayerClass = textLayerClass;
+		this.getSentences = getSentences;
 		this.isPrintPreview = isPrintPreview;
 	}
-	
+
 	PDFPage.prototype = {
 		clear: function () {
 			if(this.renderTask !== null) {
@@ -191,39 +192,39 @@
 			if(textLayer === null) {
 				return;
 			}
-			
+
 			//var textDivs = textLayer.children();
 			var textDivs = $(textLayer).find("div.pdfsent");
 			var item = textDivs[itemID];
-			
+
 			var before = item.childNodes[0].nodeValue.substr(0, matchPos);
 			var middle = item.childNodes[0].nodeValue.substr(matchPos, text.length);
 			var after = document.createTextNode(item.childNodes[0].nodeValue.substr(matchPos + text.length));
-			
+
 			var highlight_span = document.createElement("span");
 			highlight_span.className = "highlight";
 			highlight_span.style["fontFamily"]=item.style["fontFamily"];
 			highlight_span.style["fontSize"]=item.style["fontSize"];
 			highlight_span.appendChild(document.createTextNode(middle));
-			
+
 			item.childNodes[0].nodeValue = before;
 			item.childNodes[0].parentNode.insertBefore(after, item.childNodes[0].nextSibling);
 			item.childNodes[0].parentNode.insertBefore(highlight_span, item.childNodes[0].nextSibling);
-			
+
 			// Scroll to item...
 			var parentContainer = this.container.parent()[0];
-			
+
 			var curScrollTop = parentContainer.scrollTop;
 			var containerHeight = parentContainer.offsetHeight;
-			
+
 			highlight_span.scrollIntoView();
-			
+
 			var newScrollTop = parentContainer.scrollTop;
-			
+
 			var scrolledDown = newScrollTop > curScrollTop;
 			var newScrollPosInOldViewport = curScrollTop + containerHeight > newScrollTop;
 			var scrolledToEnd = newScrollTop >= parentContainer.scrollHeight - containerHeight;
-			
+
 			if(scrolledDown && newScrollPosInOldViewport && !scrolledToEnd) {
 				parentContainer.scrollTop = curScrollTop;
 			} else {
@@ -270,7 +271,8 @@
 						textLayerDiv: self.textLayer[0],
 						pageIndex: self.id,
 						viewport: viewport,
-						textLayerClass: self.textLayerClass
+						textLayerClass: self.textLayerClass,
+						getSentences: self.getSentences
 					});
 
 					textLayerBuilder.setTextContent(self.textContent);
@@ -280,7 +282,7 @@
 					if(linkService) {
 						// Render the annotation layer...
 						// NOTE: Annotation div is inserted into the page div iff
-						// there are annotations in the current page. This is 
+						// there are annotations in the current page. This is
 						// handled by the AnnotationLayerBuilder.
 						var annotationLayerBuilder = new AnnotationsLayerBuilder({
 							pageDiv: self.container[0],
@@ -336,10 +338,11 @@
 		this.onDataDownloaded = null;
 		this.onCurrentPageChanged = null;
 		this.passwordCallback = null;
+		this.getSentences = null;
 	}
 
 	PDFViewer.prototype = {
-		setUrl: function (url, element, initialScale, renderTextLayer, textLayerClass, footerImage, isPrintPreview, pageMargin) {
+		setUrl: function (url, element, initialScale, renderTextLayer, textLayerClass, footerImage, isPrintPreview, pageMargin, getSentences) {
 			this.resetSearch();
 			this.pages = [];
 			this.pdfLinkService = null;
@@ -350,13 +353,14 @@
 			this.textLayerClass = textLayerClass;
 			this.footerImagePath = footerImage;
 			this.isPrintPreview = isPrintPreview;
+			this.getSentences = getSentences;
 			var self = this;
 			var getDocumentTask = PDFJS.getDocument(url, null, angular.bind(this, this.passwordCallback), angular.bind(this, this.downloadProgress));
 			getDocumentTask.then(function (pdf) {
 				self.pdf = pdf;
 
 				// Get all the pages...
-				self.getAllPages(pdf, renderTextLayer, textLayerClass, footerImage, isPrintPreview, function (pageList, pagesRefMap) {
+				self.getAllPages(pdf, renderTextLayer, textLayerClass, getSentences, footerImage, isPrintPreview, function (pageList, pagesRefMap) {
 					self.pages = pageList;
 					self.pagesRefMap = pagesRefMap;
 					self.pdfLinkService = new PDFLinkService(pagesRefMap, self.api);
@@ -446,7 +450,7 @@
 		getAPI: function () {
 			return this.api;
 		},
-		getAllPages: function (pdf, hasTextLayer, textLayerClass, footerImagePath, isPrintPreview, callback) {
+		getAllPages: function (pdf, hasTextLayer, textLayerClass, getSentences, footerImagePath, isPrintPreview, callback) {
 			var pageList = [],
 			    pagesRefMap = {},
 				numPages = pdf.numPages,
@@ -463,9 +467,9 @@
 						pagesRefMap[refStr] = page.pageIndex + 1;
 
 						var textContentTask = page.getTextContent();
-						
+
 						textContentTask.then(function (textContent) {
-							pageList[page.pageIndex] = new PDFPage(page, textContent, textLayerClass, footerImagePath, isPrintPreview);
+							pageList[page.pageIndex] = new PDFPage(page, textContent, textLayerClass, getSentences, footerImagePath, isPrintPreview);
 
 							--remainingPages;
 							if(remainingPages === 0) {
@@ -558,7 +562,7 @@
 			var self = this;
 			var numPages = this.pages.length;
 			var currentPageID = 0;
-			
+
 			var atLeastOnePageInViewport = false;
 			for(var iPage = 0;iPage < numPages;++iPage) {
 				var page = this.pages[iPage];
@@ -605,7 +609,7 @@
 		},
 		resetSearch: function () {
 			this.clearLastSearchHighlight();
-		
+
 			this.searchResults = [];
 			this.searchTerm = "";
 			this.searchHighlightResultID = -1;
@@ -767,11 +771,11 @@
 			this.onDataDownloaded("loading", progressData.loaded, total, "");
 		}
 	};
-	
+
 	function PDFViewerAPI(viewer) {
 		this.viewer = viewer;
 	};
-	
+
 	PDFViewerAPI.prototype = {
 		getNextZoomInScale: function (scale) {
 			var newScale = scale;
@@ -895,7 +899,7 @@
 		},
 		print: function(){
 			window.print();
-		}	
+		}
 	};
 
 	angular.module("angular-pdf-viewer", []).
@@ -915,6 +919,7 @@
 				isPrintPreview: "@",
 				progressCallback: "&",
 				passwordCallback: "&",
+				getSentences: "&",
 				searchTerm: "@",
 				searchResultId: "=",
 				searchNumOccurences: "=",
@@ -969,10 +974,10 @@
 					if (this.progressCallback) {
 						var self = this;
 						this.$apply(function () {
-							self.progressCallback({ 
+							self.progressCallback({
 								operation: operation,
-								state: state, 
-								value: value, 
+								state: state,
+								value: value,
 								total: total,
 								message: message
 							});
@@ -986,7 +991,7 @@
 				$scope.viewer.onDataDownloaded = angular.bind($scope, $scope.onDataDownloaded);
 				$scope.viewer.onCurrentPageChanged = angular.bind($scope, $scope.onCurrentPageChanged);
 				$scope.viewer.passwordCallback = angular.bind($scope, $scope.getPDFPassword);
-				
+				$scope.getSentences = angular.bind($scope, $scope.getSentences);
 				$scope.api = $scope.viewer.getAPI();
 
 				$scope.shouldRenderTextLayer = function () {
@@ -1000,7 +1005,7 @@
 				$scope.onPDFSrcChanged = function () {
 					$element.empty();
 					this.lastScrollY = 0;
-					this.viewer.setUrl(this.src, $element, this.initialScale, this.shouldRenderTextLayer(), this.textLayerClass, this.footerImage, this.isPrintPreview, pageMargin);
+					this.viewer.setUrl(this.src, $element, this.initialScale, this.shouldRenderTextLayer(), this.textLayerClass, this.footerImage, this.isPrintPreview, pageMargin, this.getSentences);
 				};
 
 				$scope.onPDFFileChanged = function () {
