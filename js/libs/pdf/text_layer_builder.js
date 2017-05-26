@@ -68,6 +68,34 @@ function isWord(word){
     return false;
   }
 }
+function isUpperCase(myString) {
+  return (myString == myString.toUpperCase());
+}
+function combineDivs(lastDiv,textDiv){
+  //combines textDiv content into lastDiv content appropriately
+  if(lastDiv.textContent.endsWith(" ") || textDiv.textContent.startsWith(" "))
+    lastDiv.textContent+=textDiv.textContent
+  else{
+      var leftBound=lastDiv.textContent.lastIndexOf(" ");
+      var lastNewLine=lastDiv.textContent.lastIndexOf("\\n");
+      if(lastNewLine>leftBound)
+        leftBound=lastNewLine;
+      var rightBound=(lastDiv.textContent+textDiv.textContent).indexOf(" ",leftBound+1);
+      var firstNewLine=(lastDiv.textContent+textDiv.textContent).indexOf("\\n",leftBound+1);
+      if(firstNewLine<rightBound && firstNewLine>0)
+        rightBound=firstNewLine;
+      var potential_word=null;
+      if(leftBound>=0 && rightBound>=0)
+        potential_word=(lastDiv.textContent+textDiv.textContent).substring(leftBound+1,rightBound);
+
+      if(potential_word!=null && isWord(potential_word.toLowerCase())){
+        lastDiv.textContent+=textDiv.textContent;
+      }
+      else{
+        lastDiv.textContent+=" "+textDiv.textContent;
+      }
+  }
+}
 /**
  * @typedef {Object} TextLayerBuilderOptions
  * @property {HTMLDivElement} textLayerDiv - The text layer container.
@@ -116,7 +144,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       var textDivsLength = textDivs.length;
       var canvas = document.createElement('canvas');
       var ctx = canvas.getContext('2d');
-      if(this.sentences==null)
+      if(this.sentences==null && this.getSentences)
         this.sentences=this.getSentences();
 
       // No point in rendering many divs as it would make the browser
@@ -131,134 +159,122 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       var lastDiv=null;
       var offset = 0;
       var divs = {};
-      for (var s=0; s< this.sentences.length; s++){
-        var sentence=this.sentences[s];
-        var offset=0; //how much of the sentence have we found a div for
-        //find sentence start in divs
-        for (var i = 0; i < textDivsLength; i++) {
-           var textDiv = textDivs[i];
-           var text = textDiv.textContent.replace(".","").trim();
-           var sentencePart=sentence.slice(offset);
-           if(text.length>0)
-           if(sentencePart.indexOf(text)>=0){
-             textLayerFrag.append(textDiv);
-             offset+=text.length;
-           }
-         }
+      if(this.sentences!=null && this.sentences!=undefined){
+        for (var s=0; s< this.sentences.length; s++){
+          var sentence=this.sentences[s];
+          var offset=0; //how much of the sentence have we found a div for
+          //find sentence start in divs
+          for (var i = 0; i < textDivsLength; i++) {
+             var textDiv = textDivs[i];
+             if(!$(textDiv).hasClass("sentence")){
+               var text = textDiv.textContent.replace(".","").trim().replace(/\s\s+/g, ' ').replace(/[(),.#"!%$@_]/g,'').toLowerCase();
+               var sentencePart=sentence.slice(offset);
+               if(text.length>0 && !(isUpperCase(textDiv.textContent.trim()) && textDiv.textContent.trim().split(" ").length<=3)){
+                 if(sentencePart.indexOf(text)>=0 && sentencePart.indexOf(text)<=10){
+                   $(textDiv).addClass("hl_"+s);
+                   $(textDiv).addClass("sentence");
+                   $(textDiv).attr("data-sent",sentencePart);
+                   var width = ctx.measureText(textDiv.textContent).width;
+                   offset+=text.length;
+                   var combined=false;
+                   if(textLayerFrag.children.length>0){
+                     lastDiv=textLayerFrag.children[textLayerFrag.children.length-1];
+                     if(topnear(textDiv.style.top,lastDiv.style.top)){
+                        combineDivs(lastDiv,textDiv);
+                        var width = ctx.measureText(lastDiv.textContent).width;
+                        $(lastDiv).attr("data-canvas-width",width);
+                        $(lastDiv).css("width",width);
+                        combined=true;
+                     }
+                   }
+                   if(!combined)
+                     textLayerFrag.append(textDiv);
+                 }
+               }
+               else if(text.length==0){
+                 textLayerFrag.append(textDiv);
+                 //offset+=text.length;
+               }
+             }
+          }
+        }
       }
-      /*for (var i = 0; i < textDivsLength; i++) {
-         var textDiv = textDivs[i];
-         var text = textDiv.textContent;
-         for (var s=0; s< this.sentences.length; s++){
-           var sentence=this.sentences[s];
-           if(sentence.indexOf(text)>=0)
-             textLayerFrag.append(textDiv);
-             continue;
-         }
-      }
-      for (var s=0; s< this.sentences.length; s++){
-        var sentence=this.sentences[s];
-        var offset=0; //how much of the sentence have we found a div for
+      else{
         for (var i = 0; i < textDivsLength; i++) {
           var textDiv = textDivs[i];
-          var text = textDiv.textContent;
-          var sentencePart=sentence.slice(offset)
-          if(text.length>0){
-            if(sentencePart.indexOf(text)>=0){
-
-              textLayerFrag.append(textDiv);
-              offset+=text.length; //we've now read this much of the sentence, start there next time
-            }
-            else{
-              textLayerFrag.append(textDiv);
-            }
-          }
-          else{
-            textLayerFrag.append(textDiv);
-          }
           if (textDiv.dataset.isWhitespace !== undefined) {
             continue;
           }
 
-        }
-      }*/
-      /*
-      for (var i = 0; i < textDivsLength; i++) {
-        var textDiv = textDivs[i];
-        if (textDiv.dataset.isWhitespace !== undefined) {
-          continue;
-        }
+          var fontSize = textDiv.style.fontSize;
+          var fontFamily = textDiv.style.fontFamily;
 
-        var fontSize = textDiv.style.fontSize;
-        var fontFamily = textDiv.style.fontFamily;
+          // Only build font string and set to context if different from last.
+          if (fontSize !== lastFontSize || fontFamily !== lastFontFamily) {
+            ctx.font = fontSize + ' ' + fontFamily;
+            lastFontSize = fontSize;
+            lastFontFamily = fontFamily;
+          }
 
-        // Only build font string and set to context if different from last.
-        if (fontSize !== lastFontSize || fontFamily !== lastFontFamily) {
-          ctx.font = fontSize + ' ' + fontFamily;
-          lastFontSize = fontSize;
-          lastFontFamily = fontFamily;
-        }
-
-        var width = ctx.measureText(textDiv.textContent).width;
-        //join up divs that are on the same line. reset lastDiv contents after every new row. set lastdiv to textdiv at the end of each loop.
-        if (width > 0 && (lastDiv==null || !topnear(textDiv.style.top,lastDiv.style.top) || !leftnear(lastDiv,textDiv))) {
-          if(lastDiv!=null)
-          if(textDiv.style.top!=lastDiv.style.top){
-            if(!textDiv.textContent.startsWith(" ") && !lastDiv.textContent.endsWith(" ")){
-              lastDiv.textContent+=" ";
+          var width = ctx.measureText(textDiv.textContent).width;
+          //join up divs that are on the same line. reset lastDiv contents after every new row. set lastdiv to textdiv at the end of each loop.
+          if (width > 0 && (lastDiv==null || !topnear(textDiv.style.top,lastDiv.style.top) || !leftnear(lastDiv,textDiv))) {
+            if(lastDiv!=null)
+            if(textDiv.style.top!=lastDiv.style.top){
+              if(!textDiv.textContent.startsWith(" ") && !lastDiv.textContent.endsWith(" ")){
+                lastDiv.textContent+=" ";
+              }
             }
-          }
-	        textDiv.innerHTML=textDiv.innerHTML.replace(new RegExp("&nbsp;","g")," "); //remove &nbsp;'s from text
-          textLayerFrag.appendChild(textDiv); //textlayerfrag is what gets written out
+  	        textDiv.innerHTML=textDiv.innerHTML.replace(new RegExp("&nbsp;","g")," "); //remove &nbsp;'s from text
+            textLayerFrag.appendChild(textDiv); //textlayerfrag is what gets written out
 
-          var transform;
-          if (textDiv.dataset.canvasWidth !== undefined) {
-            // Dataset values come of type string.
+            var transform;
+            if (textDiv.dataset.canvasWidth !== undefined) {
+              // Dataset values come of type string.
+              var textScale = textDiv.dataset.canvasWidth / width;
+              transform = 'scaleX(' + textScale + ')';
+            } else {
+              transform = '';
+            }
+            var rotation = textDiv.dataset.angle;
+            if (rotation) {
+              transform = 'rotate(' + rotation + 'deg) ' + transform;
+            }
+            if (transform) {
+              CustomStyle.setProp('transform' , textDiv, transform);
+            }
+            lastDiv=textDiv;
+          }
+          else if(lastDiv!=null && topnear(textDiv.style.top,lastDiv.style.top) && leftnear(lastDiv,textDiv)){ //if we're inside a line, try to join the next layer up with the previous
+            if(lastDiv.textContent.endsWith(" ") || textDiv.textContent.startsWith(" "))
+              lastDiv.textContent+=textDiv.textContent
+            else{
+                var leftBound=lastDiv.textContent.lastIndexOf(" ");
+                var lastNewLine=lastDiv.textContent.lastIndexOf("\\n");
+                if(lastNewLine>leftBound)
+                  leftBound=lastNewLine;
+                var rightBound=(lastDiv.textContent+textDiv.textContent).indexOf(" ",leftBound+1);
+                var firstNewLine=(lastDiv.textContent+textDiv.textContent).indexOf("\\n",leftBound+1);
+                if(firstNewLine<rightBound && firstNewLine>0)
+                  rightBound=firstNewLine;
+                var potential_word=null;
+                if(leftBound>=0 && rightBound>=0)
+                  potential_word=(lastDiv.textContent+textDiv.textContent).substring(leftBound+1,rightBound);
+
+                if(potential_word!=null && isWord(potential_word.toLowerCase())){
+                  lastDiv.textContent+=textDiv.textContent;
+                }
+                else{
+                  lastDiv.textContent+=" "+textDiv.textContent;
+                }
+            }
+            var width = ctx.measureText(lastDiv.textContent).width;
             var textScale = textDiv.dataset.canvasWidth / width;
-            transform = 'scaleX(' + textScale + ')';
-          } else {
-            transform = '';
+            //transform = 'scaleX(' + textScale + ')';
+            //CustomStyle.setProp('transform' , lastDiv, transform);
           }
-          var rotation = textDiv.dataset.angle;
-          if (rotation) {
-            transform = 'rotate(' + rotation + 'deg) ' + transform;
-          }
-          if (transform) {
-            CustomStyle.setProp('transform' , textDiv, transform);
-          }
-          lastDiv=textDiv;
         }
-        else if(lastDiv!=null && topnear(textDiv.style.top,lastDiv.style.top) && leftnear(lastDiv,textDiv)){ //if we're inside a line, try to join the next layer up with the previous
-          if(lastDiv.textContent.endsWith(" ") || textDiv.textContent.startsWith(" "))
-            lastDiv.textContent+=textDiv.textContent
-          else{
-              var leftBound=lastDiv.textContent.lastIndexOf(" ");
-              var lastNewLine=lastDiv.textContent.lastIndexOf("\\n");
-              if(lastNewLine>leftBound)
-                leftBound=lastNewLine;
-              var rightBound=(lastDiv.textContent+textDiv.textContent).indexOf(" ",leftBound+1);
-              var firstNewLine=(lastDiv.textContent+textDiv.textContent).indexOf("\\n",leftBound+1);
-              if(firstNewLine<rightBound && firstNewLine>0)
-                rightBound=firstNewLine;
-              var potential_word=null;
-              if(leftBound>=0 && rightBound>=0)
-                potential_word=(lastDiv.textContent+textDiv.textContent).substring(leftBound+1,rightBound);
-
-              if(potential_word!=null && isWord(potential_word.toLowerCase())){
-                lastDiv.textContent+=textDiv.textContent;
-              }
-              else{
-                lastDiv.textContent+=" "+textDiv.textContent;
-              }
-          }
-          var width = ctx.measureText(lastDiv.textContent).width;
-          var textScale = textDiv.dataset.canvasWidth / width;
-          //transform = 'scaleX(' + textScale + ')';
-          //CustomStyle.setProp('transform' , lastDiv, transform);
-        }
-
-      }*/
-
+      }
       this.textLayerDiv.appendChild(textLayerFrag);
       this._finishRendering();
       this.updateMatches();
