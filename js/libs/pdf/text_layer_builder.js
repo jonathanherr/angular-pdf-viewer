@@ -68,8 +68,21 @@ function isWord(word){
     return false;
   }
 }
+function sentenceContains(text,sentence){
+  //test if the given sentence contains the text
+  return (sentence.indexOf(text)>=0 && sentence.indexOf(text)<=10);
+}
 function isUpperCase(myString) {
   return (myString == myString.toUpperCase());
+}
+function isHeading(text){
+  //simple section heading detection - uppercase and short
+  //TODO: add detection for outline numbers,
+  return (isUpperCase(text) && text.split(" ").length<=3)
+}
+
+function clean(text){
+  return text.replace(".","").trim().replace(/\s\s+/g, ' ').replace(/[(),.#"!%$@_]/g,'').toLowerCase();
 }
 function combineDivs(lastDiv,textDiv){
   //combines textDiv content into lastDiv content appropriately
@@ -159,45 +172,74 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       var lastDiv=null;
       var offset = 0;
       var divs = {};
+      var found=0;
+      var sentenceParts={}
       if(this.sentences!=null && this.sentences!=undefined){
-        for (var s=0; s< this.sentences.length; s++){
-          var sentence=this.sentences[s];
+        for (var sentnum=0; sentnum< this.sentences.length; sentnum++){
+          var sentence=this.sentences[sentnum];
           var offset=0; //how much of the sentence have we found a div for
+          var match=false;
+          sentenceParts[sentnum]=[];
           //find sentence start in divs
-          for (var i = 0; i < textDivsLength; i++) {
-             var textDiv = textDivs[i];
+          for (var divnum = 0; divnum < textDivs.length; divnum++) {
+             var textDiv = textDivs[divnum];
              if(!$(textDiv).hasClass("sentence")){
-               var text = textDiv.textContent.replace(".","").trim().replace(/\s\s+/g, ' ').replace(/[(),.#"!%$@_]/g,'').toLowerCase();
+               var text = clean(textDiv.textContent);
                var sentencePart=sentence.slice(offset);
-               if(text.length>0 && !(isUpperCase(textDiv.textContent.trim()) && textDiv.textContent.trim().split(" ").length<=3)){
-                 if(sentencePart.indexOf(text)>=0 && sentencePart.indexOf(text)<=10){
-                   $(textDiv).addClass("hl_"+s);
-                   $(textDiv).addClass("sentence");
-                   $(textDiv).attr("data-sent",sentencePart);
-                   var width = ctx.measureText(textDiv.textContent).width;
-                   offset+=text.length;
-                   var combined=false;
-                   if(textLayerFrag.children.length>0){
-                     lastDiv=textLayerFrag.children[textLayerFrag.children.length-1];
-                     if(topnear(textDiv.style.top,lastDiv.style.top)){
-                        combineDivs(lastDiv,textDiv);
-                        var width = ctx.measureText(lastDiv.textContent).width;
-                        $(lastDiv).attr("data-canvas-width",width);
-                        $(lastDiv).css("width",width);
-                        combined=true;
+               if(text.length>0 && !isHeading(text)){
+                 if(sentenceContains(text,sentencePart)){
+                   //if offset is zero, next div should be in sentence too, or else this is a false match
+                   if(offset==0){
+                     var next=1;
+                     var nextDivText=clean(textDivs[divnum+next].textContent);
+                     while(nextDivText.length==0){
+                       nextDivText=clean(textDivs[divnum+next].textContent);
+                       next+=1;
+                     }
+                     if(sentenceContains(nextDivText,sentencePart.slice(text.length))){
+                       match=true;
+                       sentenceParts[sentnum].push(divnum);
+                       offset+=text.length;
                      }
                    }
-                   if(!combined)
-                     textLayerFrag.append(textDiv);
+                   else{
+                     sentenceParts[sentnum].push(divnum);
+                     offset+=text.length;
+                   }
                  }
                }
-               else if(text.length==0){
-                 textLayerFrag.append(textDiv);
-                 //offset+=text.length;
-               }
+               //else if(text.length==0){
+               //   textLayerFrag.append(textDiv);
+               //}
              }
           }
+          if(match)
+            found+=1;
         }
+        //do highlights
+        for (var sentnum=0; sentnum< this.sentences.length; sentnum++){
+          for(var divnum=sentenceParts[sentnum][0];divnum<=sentenceParts[sentnum][sentenceParts[sentnum].length-1];divnum++){
+             var textDiv=textDivs[divnum];
+             $(textDiv).addClass("hl_"+sentnum);
+             $(textDiv).addClass("sentence");
+             $(textDiv).attr("data-sent",sentencePart);
+             offset+=text.length;
+             var combined=false;
+             if(textLayerFrag.children.length>0){ //if some layers already added, test to see if we should combine spans
+               lastDiv=textLayerFrag.children[textLayerFrag.children.length-1];
+               if(topnear(textDiv.style.top,lastDiv.style.top)){ //if the same top, then combine into one sentence
+                  combineDivs(lastDiv,textDiv);
+                  var width = ctx.measureText(lastDiv.textContent).width;
+                  $(lastDiv).attr("data-canvas-width",width);
+                  $(lastDiv).css("width",width);
+                  combined=true;
+               }
+             }
+             if(!combined)
+               textLayerFrag.append(textDiv);
+          }
+        }
+        console.log("found sentences:"+found/this.sentences.length);
       }
       else{
         for (var i = 0; i < textDivsLength; i++) {
