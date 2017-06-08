@@ -70,7 +70,7 @@ function isWord(word){
 }
 function sentenceContains(text,sentence){
   //test if the given sentence contains the text
-  return (sentence.indexOf(text)>=0 && sentence.indexOf(text)<=10);
+  return (sentence.indexOf(text)>=0 && sentence.indexOf(text)<=10) || (text.indexOf(sentence)>=0);
 }
 function isUpperCase(myString) {
   return (myString == myString.toUpperCase());
@@ -82,7 +82,7 @@ function isHeading(text){
 }
 
 function clean(text){
-  return text.replace(".","").trim().replace(/\s\s+/g, ' ').replace(/[(),.#"!%$@_]/g,'').toLowerCase();
+  return text.replace(".","").trim().replace(/\s\s+/g, ' ').replace(/[(),.#"!%$@_]/g,'').replace("\n"," ").toLowerCase();
 }
 function combineDivs(lastDiv,textDiv){
   //combines textDiv content into lastDiv content appropriately
@@ -176,7 +176,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       var sentenceParts={}
       if(this.sentences!=null && this.sentences!=undefined){
         for (var sentnum=0; sentnum< this.sentences.length; sentnum++){
-          var sentence=this.sentences[sentnum];
+          var sentence=clean(this.sentences[sentnum]);
           var offset=0; //how much of the sentence have we found a div for
           var match=false;
           sentenceParts[sentnum]=[];
@@ -185,9 +185,9 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
              var textDiv = textDivs[divnum];
              if(!$(textDiv).hasClass("sentence")){
                var text = clean(textDiv.textContent);
-               var sentencePart=sentence.slice(offset);
+               var sentencePart=clean(sentence.slice(offset));
                if(text.length>0 && !isHeading(text)){
-                 if(sentenceContains(text,sentencePart)){
+                 if(sentenceContains(text,sentencePart) || slideCompare(sentencePart.slice(text.length),nextDivText)>=0) {
                    //if offset is zero, next div should be in sentence too, or else this is a false match
                    if(offset==0){
                      var next=1;
@@ -196,7 +196,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
                        nextDivText=clean(textDivs[divnum+next].textContent);
                        next+=1;
                      }
-                     if(sentenceContains(nextDivText,sentencePart.slice(text.length))){
+                     if(sentenceContains(nextDivText,clean(sentencePart.slice(text.length))) || slideCompare(sentencePart.slice(text.length),nextDivText)>=0){
                        match=true;
                        sentenceParts[sentnum].push(divnum);
                        offset+=text.length;
@@ -208,9 +208,6 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
                    }
                  }
                }
-               //else if(text.length==0){
-               //   textLayerFrag.append(textDiv);
-               //}
              }
           }
           if(match)
